@@ -18,17 +18,30 @@ def clean_text(text_str, stem=False, custom_stopwords=[]):
                      tok not in custom_stopwords])
 
 
+def wn_lemmatizer_tokenized_text(texts):
+    lemmatized_tokens = [[lemmatizer.lemmatize(token) for token in text] for text in texts]
+    return lemmatized_tokens
+
+
 def lower_tokenized_text(texts):
-    # normal_tokens = [[tok.lower() for tok in doc_tokens] for doc_tokens in token_list]
-    # lowered = [text.lower() for text in texts]
-    # return lowered
     lowered_tokens = [[token.lower() for token in text] for text in texts]
     return lowered_tokens
 
 
+def only_alpha_tokenized_text(texts):
+    alpha_only_tokens = [[token for token in text if token.isalpha()] for text in texts]
+    return alpha_only_tokens
+
+
+def remove_stopwords_from_tokenized_text(texts, custom_stopwords, default_stopwords=True):
+    # Pass empty list if no custom stopwords
+    stopwords_to_remove = []
+    if default_stopwords:
+        stopwords_to_remove = custom_stopwords + stopwords
+    tokens_stopwords_removed = [[token for token in text if token not in stopwords_to_remove] for text in texts]
+    return tokens_stopwords_removed
+
 def remove_tokenized_punctuation(texts):
-    # no_punc_tokens = [[tok for tok in word_tokenize(text) if tok not in string.punctuation] for text in texts]
-    # no_punc_joined = [' '.join(sent) for sent in no_punc_tokens]
     no_punctuation = [[token for token in text if token not in string.punctuation] for text in texts]
     return no_punctuation
 
