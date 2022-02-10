@@ -18,6 +18,15 @@ def clean_text(text_str, stem=False, custom_stopwords=[]):
                      tok not in custom_stopwords])
 
 
+def clean_corpus(corpus, custom_stopwords, default_stopwords=True, lemmatize=False):
+    tokens = tokenize_corpus(corpus)
+    clean_tokens = only_alpha_tokenized_text(remove_tokenized_punctuation(lower_tokenized_text(tokens)))
+    filtered_clean_tokens = remove_stopwords_from_tokenized_text(clean_tokens, custom_stopwords, default_stopwords)
+    if lemmatize:
+        filtered_clean_tokens = wn_lemmatizer_tokenized_text(filtered_clean_tokens)
+    return [" ".join(cleaned_tokens) for cleaned_tokens in filtered_clean_tokens]
+
+
 def wn_lemmatizer_tokenized_text(texts):
     lemmatized_tokens = [[lemmatizer.lemmatize(token) for token in text] for text in texts]
     return lemmatized_tokens
@@ -40,6 +49,7 @@ def remove_stopwords_from_tokenized_text(texts, custom_stopwords, default_stopwo
         stopwords_to_remove = custom_stopwords + stopwords
     tokens_stopwords_removed = [[token for token in text if token not in stopwords_to_remove] for text in texts]
     return tokens_stopwords_removed
+
 
 def remove_tokenized_punctuation(texts):
     no_punctuation = [[token for token in text if token not in string.punctuation] for text in texts]
