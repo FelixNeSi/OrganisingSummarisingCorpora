@@ -46,14 +46,9 @@ def do_get_topic_model(data):
     return topic_dist
 
 
-data = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes", "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"
-        , "Good TESTS go For EdGe CaSes CaSes CaSes CaSes", "Good TESTS go For EdGe CaSes CaSes CaSes CaSes"]
-
-lda_corp, id2Word = prep_docs_for_topic_modelling(data)
-model = lda(lda_corp, id2Word, num_topics=2)
-x = get_topic_distributions(model, lda_corp)
-print(x)
-
-print(do_get_topic_model(data))
+# data = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes", "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"
+#         , "Good TESTS go For EdGe CaSes CaSes CaSes CaSes", "Good TESTS go For EdGe CaSes CaSes CaSes CaSes"]
+#
+# print(do_get_topic_model(data))
 
 

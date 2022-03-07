@@ -16,25 +16,30 @@ def encode_corpus_with_model(data, model):
     return embeddings
 
 
-def kmeans_cluster(corpus_embeddings, num_clusters):
+def kmeans_cluster(corpus_embeddings, num_clusters=5):
     clustering_model = KMeans(n_clusters=num_clusters)
     clustering_model.fit(corpus_embeddings)
     cluster_assignment = clustering_model.labels_
     return cluster_assignment
 
 
-def aglo_cluster(corpus_embeddings, n_clusters=None, distance_threshold=1.5):
+def aglo_cluster(corpus_embeddings, n_clusters=5, distance_threshold=None):
     clustering_model = AgglomerativeClustering(n_clusters=n_clusters,
                                                distance_threshold=distance_threshold)  # , affinity='cosine', linkage='average', distance_threshold=0.4)
     clustering_model.fit(corpus_embeddings)
     cluster_assignment = clustering_model.labels_
     return cluster_assignment
-
+sh
 
 def fast_cluster(corpus_embeddings, min_community_size=25, threshold=0.75):
     clusters = util.community_detection(corpus_embeddings, min_community_size=min_community_size, threshold=threshold,
                                         init_max_size=len(corpus_embeddings))
-    return clusters
+    assignments = [None for x in range(len(corpus_embeddings))]
+    for i, cluster in enumerate(clusters):
+        for doc in cluster:
+            assignments[doc] = i
+    # print(assignments)
+    return assignments
 
 
 def print_clusters(cluster_assignment, corpus):
@@ -149,18 +154,18 @@ def do_bert_keyword_extraction(data, sim_method="cosine", top_n=5, nr_candidates
 
 
 
-data = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes",
-        "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"
-    , "Good TESTS go For EdGe CaSes CaSes CaSes CaSes", "Good TESTS go For EdGe CaSes CaSes CaSes CaSes"]
-
-# ['cases', 'contains', 'edge', 'good', 'sentence', 'stopwords', 'test', 'tests']
-
-# print(generate_candidate_keywords(data[0]))
-print(do_bert_keyword_extraction(data))
+# data = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes",
+#         "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"
+#     , "Good TESTS go For EdGe CaSes CaSes CaSes CaSes", "Good TESTS go For EdGe CaSes CaSes CaSes CaSes"]
+# #
+# # # ['cases', 'contains', 'edge', 'good', 'sentence', 'stopwords', 'test', 'tests']
+# #
+# # # print(generate_candidate_keywords(data[0]))
+# # print(do_bert_keyword_extraction(data))
 # model = create_transformer_model('distilbert-base-nli-mean-tokens')
 # embeddings = encode_corpus_with_model(data, model)
 # # embeddings = normalise_embeddings(embeddings)
-# assignments = fast_cluster(embeddings, 3, 0.5)
+# assignments = kmeans_cluster(embeddings, 3)
 # # for i, cluster in enumerate(clusters):
 # #     print("\nCluster {}, #{} Elements ".format(i+1, len(cluster)))
 # #     for sentence_id in cluster[0:3]:
