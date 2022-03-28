@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 import itertools
 
+
 def create_transformer_model(model_name='distilbert-base-nli-mean-tokens'):
     model = SentenceTransformer(model_name)
     return model
@@ -29,7 +30,7 @@ def aglo_cluster(corpus_embeddings, n_clusters=5, distance_threshold=None):
     clustering_model.fit(corpus_embeddings)
     cluster_assignment = clustering_model.labels_
     return cluster_assignment
-sh
+
 
 def fast_cluster(corpus_embeddings, min_community_size=25, threshold=0.75):
     clusters = util.community_detection(corpus_embeddings, min_community_size=min_community_size, threshold=threshold,
@@ -84,7 +85,7 @@ def max_sum_sim(doc_embedding, candidate_embeddings, candidates, top_n, nr_candi
     # Calculate distances and extract keywords
     distances = cosine_similarity(doc_embedding, candidate_embeddings)
     distances_candidates = cosine_similarity(candidate_embeddings,
-                                            candidate_embeddings)
+                                             candidate_embeddings)
 
     # Get top_n words as candidates based on cosine similarity
     words_idx = list(distances.argsort()[0][-nr_candidates:])
@@ -104,7 +105,6 @@ def max_sum_sim(doc_embedding, candidate_embeddings, candidates, top_n, nr_candi
 
 
 def mmr(doc_embedding, word_embeddings, candidates, top_n, diversity):
-
     # Extract similarity within words, and between words and the document
     word_doc_similarity = cosine_similarity(word_embeddings, doc_embedding)
     word_similarity = cosine_similarity(word_embeddings)
@@ -120,7 +120,7 @@ def mmr(doc_embedding, word_embeddings, candidates, top_n, diversity):
         target_similarities = np.max(word_similarity[candidates_idx][:, keywords_idx], axis=1)
 
         # Calculate MMR
-        mmr = (1-diversity) * candidate_similarities - diversity * target_similarities.reshape(-1, 1)
+        mmr = (1 - diversity) * candidate_similarities - diversity * target_similarities.reshape(-1, 1)
         mmr_idx = candidates_idx[np.argmax(mmr)]
 
         # Update keywords & candidates
@@ -138,9 +138,11 @@ def do_bert_keyword_extraction(data, sim_method="cosine", top_n=5, nr_candidates
     keywords = []
     for i in range(len(data)):
         if sim_method == "cosine":
-            keywords.append(get_most_cosine_similar(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n=top_n))
+            keywords.append(
+                get_most_cosine_similar(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n=top_n))
         elif sim_method == "max_sum":
-            keywords.append(max_sum_sim(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n, nr_candidates))
+            keywords.append(
+                max_sum_sim(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n, nr_candidates))
         elif sim_method == "max_marginal":
             keywords.append(mmr(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n, diversity))
     return keywords
@@ -150,9 +152,6 @@ def do_bert_keyword_extraction(data, sim_method="cosine", top_n=5, nr_candidates
     # print(len(doc_embeddings))
     # print(len(candidate_embeddings))
     # print(len(candidates))
-
-
-
 
 # data = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes",
 #         "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"

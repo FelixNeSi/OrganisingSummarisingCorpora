@@ -39,9 +39,9 @@ def get_topic_distributions(model, lda_corpus):
     return topic_distributions
 
 
-def do_get_topic_model(data):
+def do_get_topic_model(data, num_topics=10):
     lda_corp, id2Word = prep_docs_for_topic_modelling(data)
-    model = lda(lda_corp, id2Word, num_topics=2)
+    model = lda(lda_corp, id2Word, num_topics=num_topics)
     topic_dist = get_topic_distributions(model, lda_corp)
     return topic_dist
 
