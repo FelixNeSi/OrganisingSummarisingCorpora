@@ -79,7 +79,7 @@ def organsise_summarise_corpus(data):
 # dat = ["This is a 1 TEST sentence that contains CaSes CaSes CaSes CaSes",
 #        "CaSes CaSes CaSes CaSes ALL OF THE STOPWORDS !@!@!@@", "CaSes CaSes Good TESTS go For EdGe CaSes"
 #     , "Good TESTS go For EdGe CaSes CaSes CaSes CaSes", "Good TESTS go For EdGe CaSes CaSes CaSes CaSes"
-def get_save_doc_representation(file_name, representation_method, model_name, n_topics, save_doc_representation):
+def get_save_doc_representation(file_name, representation_method, model_name="distilbert-base-nli-mean-tokens", n_topics=10, save_doc_representation=True):
     with open('{}.pickle'.format(file_name), 'rb') as handle:
         m_data = pickle.load(handle)
 
@@ -87,12 +87,12 @@ def get_save_doc_representation(file_name, representation_method, model_name, n_
     # print(m_text)
 
     if representation_method == 'bert':
-        pickle_name = model_name
+        pickle_name = model_name.replace('/', '-')
     else:
         pickle_name = 'lda_{}'.format(n_topics)
 
     if save_doc_representation:
-        docs = get_doc_representation(m_text, method=representation_method)
+        docs = get_doc_representation(m_text, method=representation_method, model_name=model_name)
         with open('{}_{}.pickle'.format(file_name, pickle_name), 'wb') as handle:
             pickle.dump(docs, handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
@@ -101,8 +101,8 @@ def get_save_doc_representation(file_name, representation_method, model_name, n_
 
     return docs
 
-
-def cluster_experiment(file_name, save_name, representation_method='bert', model_name='distilbert-base-nli-mean-tokens', save_doc_representation=True, n_topics=10):
+# def cluster_experiment(file_name, save_name, representation_method='bert', model_name='distilbert-base-nli-mean-tokens', save_doc_representation=True, n_topics=10):
+def cluster_experiment(docs, save_name, cluster_method):
     # with open('{}.pickle'.format(file_name), 'rb') as handle:
     #     m_data = pickle.load(handle)
     #
@@ -125,11 +125,15 @@ def cluster_experiment(file_name, save_name, representation_method='bert', model
     # pca = PCA(n_components=50)
     # new_docs = pca.fit_transform(docs)
 
-    cluster_nums = [5, 10, 15, 20, 30, 40, 50, 100, 150, 200, 250, 300, 350, 400, 450]
+    #cluster_nums = [5, 10, 15, 20, 30, 40, 50, 100, 150, 200, 250, 300, 350, 400, 450]
+    cluster_nums = [2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 250, 300, 350, 400]
+    # , 450]
+        # , 500, 550, 600, 650, 700, 750,
+        #             800, 850, 900, 950, 1000, 1100, 1200]
         #, 500, 550, 600, 650, 700]
     all_silhouette = []
     for cl in cluster_nums:
-        clusters = cluster_doc_representation(docs, method='aglo', num_clusters=cl)
+        clusters = cluster_doc_representation(docs, method=cluster_method, num_clusters=cl)
         silhouette = metrics.silhouette_score(docs, clusters, metric='euclidean')
         print('Cluster number: {}, score: {}'.format(cl, silhouette))
         all_silhouette.append(silhouette)
@@ -139,5 +143,63 @@ def cluster_experiment(file_name, save_name, representation_method='bert', model
     df.to_csv('{}.csv'.format(save_name))
 
 #cluster_experiment("500n-KPCrowd", "500n-KPCrowd-aglo-cluster-all-MiniLM-L6-v2", model_name='all-MiniLM-L6-v2', save_doc_representation=False)
-cluster_experiment("500n-KPCrowd", "500n-KPCrowd-kmeans-cluster-100-lda", representation_method='topic', n_topics=100)
+# cluster_experiment("500n-KPCrowd", "500n-KPCrowd-kmeans-cluster-100-lda", representation_method='topic', n_topics=100)
 #cluster_experiment("Kravpivin2009", "Kravpivin2009-kmeans-cluster-all-MiniLM", 'all-MiniLM-L6-v2', False)
+
+# KPCrowd_distil = get_save_doc_representation("500n-KPCrowd", "bert", "distilbert-base-nli-mean-tokens")
+# cluster_experiment(KPCrowd_distil, "500n-KPCrowd-kmeans-distil-no-pre", 'kmeans')
+# cluster_experiment(KPCrowd_distil, "500n-KPCrowd-aglo-distil-no-pre", 'aglo')
+# KPCrowd_MiniLM = get_save_doc_representation("500n-KPCrowd", "bert", "all-MiniLM-L6-v2")
+# cluster_experiment(KPCrowd_MiniLM, "500n-KPCrowd-kmeans-MiniLM", 'kmeans')
+# cluster_experiment(KPCrowd_MiniLM, "500n-KPCrowd-aglo-MiniLM", 'aglo')
+
+# marujo_distil = get_save_doc_representation("marujo", "bert", "distilbert-base-nli-mean-tokens")
+# print('{} ----- {}'.format("1", len(marujo_distil)))
+# # with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
+# #     Kravpivin_distil = pickle.load(handle)
+# cluster_experiment(marujo_distil, "marujo-kmeans-distil-no-pre", 'kmeans')
+# cluster_experiment(marujo_distil, "marujo-aglo-distil-no-pre", 'aglo')
+# marujo_MiniLM = get_save_doc_representation("marujo", "bert", "all-MiniLM-L6-v2")
+# print('{} ----- {}'.format("1", len(marujo_MiniLM)))
+# # with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
+# #     Kravpivin_MiniLM = pickle.load(handle)
+# cluster_experiment(marujo_MiniLM, "marujo-kmeans-MiniLM", 'kmeans')
+# cluster_experiment(marujo_MiniLM, "marujo-aglo-MiniLM", 'aglo')
+#
+# marujo_SciBert = get_save_doc_representation("marujo", "bert", "allenai/scibert_scivocab_uncased")
+# print('{} ----- {}'.format("1", len(marujo_SciBert)))
+# cluster_experiment(marujo_SciBert, "marujo-kmeans-scibert-no-pre", 'kmeans')
+# cluster_experiment(marujo_SciBert, "marujo-aglo-scibert-no-pre", 'aglo')
+#
+# topic_nums = [5, 10, 15, 25, 35, 50, 75, 100, 150, 200, 250, 300]
+# for t in topic_nums:
+#     marujo_topic = get_save_doc_representation("marujo", "topic", n_topics=t)
+#     cluster_experiment(marujo_topic, "marujo-kmeans-no-pre-{}-lda".format(t), 'kmeans')
+#     cluster_experiment(marujo_topic, "marujo-aglo-no-pre-{}-lda".format(t), 'aglo')
+
+
+
+# KPCrowd_sci = get_save_doc_representation("500n-KPCrowd", "bert", "scibert_scivocab_cased")
+# cluster_experiment(KPCrowd_sci, "500n-KPCrowd-kmeans-scibert-no-pre", 'kmeans')
+# cluster_experiment(KPCrowd_sci, "500n-KPCrowd-aglo-scibert-no-pre", 'aglo')
+#
+# Kravpivin_distil = get_save_doc_representation("Kravpivin2009", "bert", "distilbert-base-nli-mean-tokens")
+# # with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
+# #     Kravpivin_distil = pickle.load(handle)
+# cluster_experiment(Kravpivin_distil, "Kravpivin-kmeans-distil-no-pre", 'kmeans')
+# cluster_experiment(Kravpivin_distil, "Kravpivin-aglo-distil-no-pre", 'aglo')
+# Kravpivin_MiniLM = get_save_doc_representation("Kravpivin2009", "bert", "all-MiniLM-L6-v2")
+# # with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
+# #     Kravpivin_MiniLM = pickle.load(handle)
+# cluster_experiment(Kravpivin_MiniLM, "Kravpivin-kmeans-MiniLM", 'kmeans')
+# cluster_experiment(Kravpivin_MiniLM, "Kravpivin-aglo-MiniLM", 'aglo')
+#
+# Kravpivin_SciBert = get_save_doc_representation("Kravpivin2009", "bert", "allenai/scibert_scivocab_uncased")
+# cluster_experiment(Kravpivin_SciBert, "Kravpivin-kmeans-scibert-no-pre", 'kmeans')
+# cluster_experiment(Kravpivin_SciBert, "Kravpivin-aglo-scibert-no-pre", 'aglo')
+#
+# topic_nums = [5, 10, 15, 25, 35, 50, 75, 100, 150, 200, 250, 300]
+# for t in topic_nums:
+#     Kravpivin_topic = get_save_doc_representation("Kravpivin2009", "topic", n_topics=t)
+#     cluster_experiment(Kravpivin_topic, "Kravpivin-kmeans-no-pre-{}-lda".format(t), 'kmeans')
+#     cluster_experiment(Kravpivin_topic, "Kravpivin-aglo-no-pre-{}-lda".format(t), 'aglo')
