@@ -131,15 +131,19 @@ def cluster_experiment(docs, save_name, cluster_method):
         # , 500, 550, 600, 650, 700, 750,
         #             800, 850, 900, 950, 1000, 1100, 1200]
         #, 500, 550, 600, 650, 700]
-    all_silhouette = []
+    all_silhouette, all_davies_bouldin, all_calinksi = [], [], []
     for cl in cluster_nums:
         clusters = cluster_doc_representation(docs, method=cluster_method, num_clusters=cl)
         silhouette = metrics.silhouette_score(docs, clusters, metric='euclidean')
+        davies = metrics.davies_bouldin_score(docs, clusters)
+        calinksi = metrics.calinski_harabasz_score(docs, clusters)
         print('Cluster number: {}, score: {}'.format(cl, silhouette))
         all_silhouette.append(silhouette)
+        all_davies_bouldin.append(davies)
+        all_calinksi.append(calinksi)
         # print(metrics.silhouette_score(docs, clusters, metric='euclidean'))
     # organsise_summarise_corpus(dat)
-    df = pd.DataFrame(list(zip(cluster_nums, all_silhouette)), columns=['n_cluster', 'silhouette score'])
+    df = pd.DataFrame(list(zip(cluster_nums, all_silhouette, all_davies_bouldin, all_calinksi)), columns=['n_cluster', 'silhouette score', 'Davies-Bouldin', 'Calinski-Harabasz'])
     df.to_csv('{}.csv'.format(save_name))
 
 #cluster_experiment("500n-KPCrowd", "500n-KPCrowd-aglo-cluster-all-MiniLM-L6-v2", model_name='all-MiniLM-L6-v2', save_doc_representation=False)
@@ -154,9 +158,9 @@ def cluster_experiment(docs, save_name, cluster_method):
 # cluster_experiment(KPCrowd_MiniLM, "500n-KPCrowd-aglo-MiniLM", 'aglo')
 
 # marujo_distil = get_save_doc_representation("marujo", "bert", "distilbert-base-nli-mean-tokens")
-# print('{} ----- {}'.format("1", len(marujo_distil)))
-# # with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
-# #     Kravpivin_distil = pickle.load(handle)
+# # print('{} ----- {}'.format("1", len(marujo_distil)))
+# with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
+#     Kravpivin_distil = pickle.load(handle)
 # cluster_experiment(marujo_distil, "marujo-kmeans-distil-no-pre", 'kmeans')
 # cluster_experiment(marujo_distil, "marujo-aglo-distil-no-pre", 'aglo')
 # marujo_MiniLM = get_save_doc_representation("marujo", "bert", "all-MiniLM-L6-v2")
@@ -184,9 +188,9 @@ def cluster_experiment(docs, save_name, cluster_method):
 # cluster_experiment(KPCrowd_sci, "500n-KPCrowd-aglo-scibert-no-pre", 'aglo')
 #
 # Kravpivin_distil = get_save_doc_representation("Kravpivin2009", "bert", "distilbert-base-nli-mean-tokens")
-# # with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
-# #     Kravpivin_distil = pickle.load(handle)
-# cluster_experiment(Kravpivin_distil, "Kravpivin-kmeans-distil-no-pre", 'kmeans')
+with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
+    Kravpivin_distil = pickle.load(handle)
+cluster_experiment(Kravpivin_distil, "TEST/Kravpivin-TEST-ON-NEW", 'kmeans')
 # cluster_experiment(Kravpivin_distil, "Kravpivin-aglo-distil-no-pre", 'aglo')
 # Kravpivin_MiniLM = get_save_doc_representation("Kravpivin2009", "bert", "all-MiniLM-L6-v2")
 # # with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:

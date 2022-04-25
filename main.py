@@ -21,7 +21,8 @@ import pandas as pd
 import torch
 
 from keyword_extraction_yake import create_yake, get_yake_keywords, do_get_expand_sfpd_phrases
-from bert import generate_candidate_keywords, create_transformer_model, get_most_cosine_similar
+from bert import generate_candidate_keywords, create_transformer_model, get_most_cosine_similar, \
+    do_bert_keyword_extraction
 import pickle
 from runner import cluster_doc_representation, group_clustered_documents
 from ast import literal_eval
@@ -99,7 +100,19 @@ def large_doc_extract(grouped_documents, num_clusters):
     keywords = []
     for i, combined_doc in enumerate(combined_docs):
         print('STARTING KEYWORD ON CLUSTER {}'.format(str(i)))
-        keywords.append(get_yake_keywords(yak, combined_doc, ))
+
+        # CODE FOR YAKE KEYWORDS, MUST!!! STRIP THE KEYWORDS AFTER
+        # keywords.append(get_yake_keywords(yak, combined_doc))
+
+        # BERT APPROACH SHOULD WORK HERE, LOOK AT HYPERPARAMETERS FOR NGRAM RANGE
+        # keywords.append(do_bert_keyword_extraction([combined_doc])[0])
+
+        # SFPD SHOULD WORK HERE, LOOK INTO PRE PROCESSING (\n included in potential phrase)
+        background_docs = [x for j,x in enumerate(combined_docs) if j!=i]
+        keywords.append(do_get_expand_sfpd_phrases([combined_doc], background_docs))
+
+    # IF YAKE, MAKE SURE TO STRIP
+    # stripped_keywords = strip_scores_from_keywords(keywords)
     # keywords = [get_yake_keywords(yak, combined_doc) for combined_doc in combined_docs]
     return keywords
 
@@ -113,7 +126,14 @@ def aggregate_compare_with_average_of_cluster(grouped_documents, average_doc_emb
             # temp_keywords = get_yake_keywords(yak, doc)
             # temp_candidate_keywords = temp_candidate_keywords + temp_keywords
 
-            temp_candidate_keywords = temp_candidate_keywords + get_yake_keywords(yak, doc)
+            # keywords.append(do_bert_keyword_extraction([combined_doc])[0])
+            # temp_candidate_keywords = temp_candidate_keywords + do_bert_keyword_extraction([doc])[0]
+            # temp_candidate_keywords = temp_candidate_keywords + get_yake_keywords(yak, doc)
+            background_docs = []
+            for j in range(num_clusters):
+                if j != i:
+                    background_docs = background_docs + grouped_documents[i]
+            temp_candidate_keywords = temp_candidate_keywords + do_get_expand_sfpd_phrases([doc], background_docs)
 
         grouped_candidate_keywords.append(list(set(temp_candidate_keywords)))
 
@@ -125,7 +145,12 @@ def aggregate_compare_with_average_of_cluster(grouped_documents, average_doc_emb
     #             print("DUPE {}".format(ce))
     #         dup[ce] = kles
 
-    grouped_stripped_candidates = strip_scores_from_keywords(grouped_candidate_keywords)
+    #NEEDED FOR YAKE
+    # grouped_stripped_candidates = strip_scores_from_keywords(grouped_candidate_keywords)
+
+    #BERT OR SFPD USE THIS!!!!!
+    grouped_stripped_candidates = grouped_candidate_keywords
+
     no_dupe_grouped_stripped = []
     for grs in grouped_stripped_candidates:
         no_dupe_grouped_stripped.append(list(set(grs)))
@@ -138,7 +163,7 @@ def aggregate_compare_with_average_of_cluster(grouped_documents, average_doc_emb
     for i in range(num_clusters):
         aggregate_average_keywords.append(
             get_most_cosine_similar(average_doc_embeddings[i].reshape(1, -1), grouped_candidate_embeddings[i],
-                                    no_dupe_grouped_stripped[i]))
+                                    no_dupe_grouped_stripped[i], top_n=25))
     return aggregate_average_keywords
 
 
@@ -187,10 +212,25 @@ def strip_scores_from_keywords(grouped_keywords):
     return stripped_keywords
 
 
-# avg_docs = group_and_average_doc_embeddings(clusters, Kravpivin_miniLM, 15)
-# aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_aglo, avg_docs, 15)
-# print(aggregate_average_kw)
+with open('Kravpivin2009.pickle', 'rb') as handle:
+    Krav_data = pickle.load(handle)
 
+true_kw = Krav_data[2]
+true_kw = true_kw[:50]
+grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
+
+avg_docs = group_and_average_doc_embeddings(clusters, Kravpivin_miniLM, 15)
+aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_aglo, avg_docs, 15)
+
+# large_doc_kw = large_doc_extract(grouped_aglo, 15)
+# print(large_doc_kw)
+print(aggregate_average_kw)
+
+# for i in range(15):
+#     print(calculate_mean_average_precision(stripped_kw[i], grouped_true_kw[i]))
+
+# print("MAP For Large DOC: {}".format(calculate_mean_average_precision(large_doc_kw, grouped_true_kw)))
+print("MAP For aggregate average DOC: {}".format(calculate_mean_average_precision(aggregate_average_kw, grouped_true_kw)))
 # print(type(Kravpivin_miniLM))
 # print(len(avg_docs))
 # for do in avg_docs:

@@ -130,7 +130,7 @@ def mmr(doc_embedding, word_embeddings, candidates, top_n, diversity):
     return [candidates[idx] for idx in keywords_idx]
 
 
-def do_bert_keyword_extraction(data, sim_method="cosine", top_n=5, nr_candidates=10, diversity=0.2):
+def do_bert_keyword_extraction(data, sim_method="cosine", top_n=25, nr_candidates=100, diversity=0.2):
     candidates = [generate_candidate_keywords([doc]) for doc in data]
     model = create_transformer_model()
     doc_embeddings = [model.encode([doc]) for doc in data]
