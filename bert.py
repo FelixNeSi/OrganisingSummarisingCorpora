@@ -137,6 +137,7 @@ def do_bert_keyword_extraction(data, sim_method="cosine", top_n=25, nr_candidate
     candidate_embeddings = [model.encode(cand) for cand in candidates]
     keywords = []
     for i in range(len(data)):
+        print("ON DOCUMENT: {} OUT OF: {}".format(i, len(data)))
         if sim_method == "cosine":
             keywords.append(
                 get_most_cosine_similar(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n=top_n))

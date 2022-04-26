@@ -188,9 +188,9 @@ def cluster_experiment(docs, save_name, cluster_method):
 # cluster_experiment(KPCrowd_sci, "500n-KPCrowd-aglo-scibert-no-pre", 'aglo')
 #
 # Kravpivin_distil = get_save_doc_representation("Kravpivin2009", "bert", "distilbert-base-nli-mean-tokens")
-with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
-    Kravpivin_distil = pickle.load(handle)
-cluster_experiment(Kravpivin_distil, "TEST/Kravpivin-TEST-ON-NEW", 'kmeans')
+# with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
+#     Kravpivin_distil = pickle.load(handle)
+# cluster_experiment(Kravpivin_distil, "TEST/Kravpivin-TEST-ON-NEW", 'kmeans')
 # cluster_experiment(Kravpivin_distil, "Kravpivin-aglo-distil-no-pre", 'aglo')
 # Kravpivin_MiniLM = get_save_doc_representation("Kravpivin2009", "bert", "all-MiniLM-L6-v2")
 # # with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
