@@ -38,7 +38,9 @@ def prep_and_pickle(file_path, save_name):
 
 
 #prep_and_pickle("data/Marujo/", "Marujo")
-prep_and_pickle("data/Krapivin2009/", "Kravpivin2009")
+# prep_and_pickle("data/Krapivin2009/", "Kravpivin2009")
+prep_and_pickle("data/kdd/", "kdd-science")
+
 
 
 

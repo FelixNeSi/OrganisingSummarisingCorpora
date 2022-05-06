@@ -212,25 +212,25 @@ def strip_scores_from_keywords(grouped_keywords):
     return stripped_keywords
 
 
-with open('Kravpivin2009.pickle', 'rb') as handle:
-    Krav_data = pickle.load(handle)
-
-true_kw = Krav_data[2]
-true_kw = true_kw[:50]
-grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
-
-avg_docs = group_and_average_doc_embeddings(clusters, Kravpivin_miniLM, 15)
-aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_aglo, avg_docs, 15)
-
-# large_doc_kw = large_doc_extract(grouped_aglo, 15)
-# print(large_doc_kw)
-print(aggregate_average_kw)
-
-# for i in range(15):
-#     print(calculate_mean_average_precision(stripped_kw[i], grouped_true_kw[i]))
-
-# print("MAP For Large DOC: {}".format(calculate_mean_average_precision(large_doc_kw, grouped_true_kw)))
-print("MAP For aggregate average DOC: {}".format(calculate_mean_average_precision(aggregate_average_kw, grouped_true_kw)))
+# with open('Kravpivin2009.pickle', 'rb') as handle:
+#     Krav_data = pickle.load(handle)
+#
+# true_kw = Krav_data[2]
+# true_kw = true_kw[:50]
+# grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
+#
+# avg_docs = group_and_average_doc_embeddings(clusters, Kravpivin_miniLM, 15)
+# aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_aglo, avg_docs, 15)
+#
+# # large_doc_kw = large_doc_extract(grouped_aglo, 15)
+# # print(large_doc_kw)
+# print(aggregate_average_kw)
+#
+# # for i in range(15):
+# #     print(calculate_mean_average_precision(stripped_kw[i], grouped_true_kw[i]))
+#
+# # print("MAP For Large DOC: {}".format(calculate_mean_average_precision(large_doc_kw, grouped_true_kw)))
+# print("MAP For aggregate average DOC: {}".format(calculate_mean_average_precision(aggregate_average_kw, grouped_true_kw)))
 # print(type(Kravpivin_miniLM))
 # print(len(avg_docs))
 # for do in avg_docs:

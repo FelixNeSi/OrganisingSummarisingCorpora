@@ -36,6 +36,7 @@ def cluster_doc_representation(doc_representations, method, num_clusters=10, min
 def group_clustered_documents(cluster_labels, data):
     clustered_docs = {}
     for i, label in enumerate(cluster_labels):
+        # print(label)
         docs_in_cluster = clustered_docs.get(label, [])
         docs_in_cluster.append(data[i])
         clustered_docs[label] = docs_in_cluster
@@ -102,7 +103,7 @@ def get_save_doc_representation(file_name, representation_method, model_name="di
     return docs
 
 # def cluster_experiment(file_name, save_name, representation_method='bert', model_name='distilbert-base-nli-mean-tokens', save_doc_representation=True, n_topics=10):
-def cluster_experiment(docs, save_name, cluster_method):
+def cluster_experiment(docs, save_name, cluster_method, raw_documents=[]):
     # with open('{}.pickle'.format(file_name), 'rb') as handle:
     #     m_data = pickle.load(handle)
     #
@@ -137,7 +138,17 @@ def cluster_experiment(docs, save_name, cluster_method):
         silhouette = metrics.silhouette_score(docs, clusters, metric='euclidean')
         davies = metrics.davies_bouldin_score(docs, clusters)
         calinksi = metrics.calinski_harabasz_score(docs, clusters)
-        print('Cluster number: {}, score: {}'.format(cl, silhouette))
+        wrong = 0
+        # print(clusters)
+        xxxxx = group_clustered_documents(clusters, raw_documents)
+        print(xxxxx[None])
+        # print(group_clustered_documents(clusters, raw_documents))
+        # print('THERE ARE {} CLUSTERD ITEMS IN TOTAL'.format(len(clusters)))
+        for plpl in clusters:
+            if plpl is None:
+                wrong += 1
+        # print("GOT {} WRONG!".format(wrong))
+        # print('Cluster number: {}, score: {}'.format(cl, silhouette))
         all_silhouette.append(silhouette)
         all_davies_bouldin.append(davies)
         all_calinksi.append(calinksi)
@@ -157,10 +168,11 @@ def cluster_experiment(docs, save_name, cluster_method):
 # cluster_experiment(KPCrowd_MiniLM, "500n-KPCrowd-kmeans-MiniLM", 'kmeans')
 # cluster_experiment(KPCrowd_MiniLM, "500n-KPCrowd-aglo-MiniLM", 'aglo')
 
-# marujo_distil = get_save_doc_representation("marujo", "bert", "distilbert-base-nli-mean-tokens")
+
 # # print('{} ----- {}'.format("1", len(marujo_distil)))
 # with open("Kravpivin2009_distilbert-base-nli-mean-tokens.pickle", 'rb') as handle:
 #     Kravpivin_distil = pickle.load(handle)
+# marujo_distil = get_save_doc_representation("marujo", "bert", "distilbert-base-nli-mean-tokens")
 # cluster_experiment(marujo_distil, "marujo-kmeans-distil-no-pre", 'kmeans')
 # cluster_experiment(marujo_distil, "marujo-aglo-distil-no-pre", 'aglo')
 # marujo_MiniLM = get_save_doc_representation("marujo", "bert", "all-MiniLM-L6-v2")
@@ -175,11 +187,18 @@ def cluster_experiment(docs, save_name, cluster_method):
 # cluster_experiment(marujo_SciBert, "marujo-kmeans-scibert-no-pre", 'kmeans')
 # cluster_experiment(marujo_SciBert, "marujo-aglo-scibert-no-pre", 'aglo')
 #
+#
+# df = pd.read_csv("Marujo_with_keywords.csv")
+# background_docs = df['1'].tolist()
+# # background_docs = background_docs[:50]
+#
 # topic_nums = [5, 10, 15, 25, 35, 50, 75, 100, 150, 200, 250, 300]
+# topic_nums = topic_nums[:20]
 # for t in topic_nums:
-#     marujo_topic = get_save_doc_representation("marujo", "topic", n_topics=t)
-#     cluster_experiment(marujo_topic, "marujo-kmeans-no-pre-{}-lda".format(t), 'kmeans')
-#     cluster_experiment(marujo_topic, "marujo-aglo-no-pre-{}-lda".format(t), 'aglo')
+#     marujo_topic = get_save_doc_representation("marujo", "topic", n_topics=t, save_doc_representation=False)
+#     cluster_experiment(marujo_topic, "TESTTEST/marujo-fast-no-pre-{}-lda".format(t), 'fast', background_docs)
+    # cluster_experiment(marujo_topic, "marujo-kmeans-no-pre-{}-lda".format(t), 'kmeans')
+    # cluster_experiment(marujo_topic, "marujo-aglo-no-pre-{}-lda".format(t), 'aglo')
 
 
 

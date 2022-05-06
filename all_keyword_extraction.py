@@ -9,13 +9,15 @@ from clustering_runner import group_clustered_documents
 from utils import calculate_mean_average_precision
 
 
-def large_doc_extract(grouped_documents, num_clusters, method='yake'):
+def large_doc_extract(grouped_documents, num_clusters, method='yake', bert_model_name='all-MiniLM-L6-v2', precomputed_embeddings=None):
     available_methods = ['yake', 'bert', 'sfpd']
     if method not in available_methods:
         print("Please choose an availble method from: {}".format(available_methods))
         return None
     if method == 'yake':
         yake_model = create_yake(num_of_keywords=50)
+    if method == 'bert':
+        model = create_transformer_model(bert_model_name)
     # grouped_large_kw = ["" for i in range(num_clusters)]
     combined_docs = []
     for i in range(num_clusters):
@@ -34,7 +36,7 @@ def large_doc_extract(grouped_documents, num_clusters, method='yake'):
             keywords.append(get_yake_keywords(yake_model, combined_doc))
         elif method == 'bert':
             # BERT APPROACH SHOULD WORK HERE, LOOK AT HYPERPARAMETERS FOR NGRAM RANGE
-            keywords.append(do_bert_keyword_extraction([combined_doc])[0])
+            keywords.append(do_bert_keyword_extraction([combined_doc], model, precomputed_embeddings=precomputed_embeddings)[0])
         elif method == 'sfpd':
             # SFPD SHOULD WORK HERE, LOOK INTO PRE PROCESSING (\n included in potential phrase)
             background_docs = [x for j, x in enumerate(combined_docs) if j != i]
@@ -49,26 +51,32 @@ def large_doc_extract(grouped_documents, num_clusters, method='yake'):
 
 
 def aggregate_compare_with_average_of_cluster(grouped_documents, average_doc_embeddings, num_clusters, method='yake',
-                                              bert_comparison_model='all-MiniLM-L6-v2',
-                                              aggregate_similairty_measure='cosine'):
+                                              bert_comparison_model_name='all-MiniLM-L6-v2',
+                                              aggregate_similairty_measure='cosine', precomputed_embeddings=None):
     available_methods = ['yake', 'bert', 'sfpd']
     if method not in available_methods:
         print("Please choose an availble method from: {}".format(available_methods))
         return None
     if method == 'yake':
         yake_model = create_yake(num_of_keywords=100)
+    model = create_transformer_model(bert_comparison_model_name)
+
 
     grouped_candidate_keywords = []
     for i in range(num_clusters):
         temp_candidate_keywords = []
-        for doc in grouped_documents[i]:
+        for l, doc in enumerate(grouped_documents[i]):
             # temp_keywords = get_yake_keywords(yak, doc)
             # temp_candidate_keywords = temp_candidate_keywords + temp_keywords
 
             if method == 'yake':
                 temp_candidate_keywords = temp_candidate_keywords + get_yake_keywords(yake_model, doc)
             elif method == 'bert':
-                temp_candidate_keywords = temp_candidate_keywords + do_bert_keyword_extraction([doc])[0]
+                if precomputed_embeddings == None:
+                    precomputed_embedding = None
+                else:
+                    precomputed_embedding = precomputed_embeddings[i][l]
+                temp_candidate_keywords = temp_candidate_keywords + do_bert_keyword_extraction([doc], model, precomputed_embeddings=precomputed_embedding)[0]
             elif method == 'sfpd':
                 background_docs = []
                 for j in range(num_clusters):
@@ -88,7 +96,7 @@ def aggregate_compare_with_average_of_cluster(grouped_documents, average_doc_emb
     for grs in grouped_stripped_candidates:
         no_dupe_grouped_stripped.append(list(set(grs)))
 
-    model = create_transformer_model(bert_comparison_model)
+    # model = create_transformer_model(bert_comparison_model)
     grouped_candidate_embeddings = [[model.encode(cand) for cand in candidates] for candidates in
                                     no_dupe_grouped_stripped]
 
@@ -161,65 +169,100 @@ def strip_yake_scores(keywords):
     return stripped_keywords
 
 
-def do_aggregate_approach(cluster_assignments, documents, document_embeddings, num_clusters):
+def do_aggregate_approach(cluster_assignments, documents, document_embeddings, num_clusters, method='yake'):
     grouped_documents = group_clustered_documents(cluster_assignments, documents)
+    grouped_document_embeddings = group_clustered_documents(cluster_assignments, document_embeddings)
     average_grouped_documents = group_and_average_doc_embeddings(cluster_assignments, document_embeddings, num_clusters)
-    aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_documents, average_grouped_documents, num_clusters)
+    aggregate_average_kw = aggregate_compare_with_average_of_cluster(grouped_documents, average_grouped_documents, num_clusters, method=method, precomputed_embeddings=grouped_document_embeddings)
     return aggregate_average_kw
 
 
-def do_large_doc_approach(cluster_assignments, documents, num_clusters):
+def do_large_doc_approach(cluster_assignments, documents, num_clusters, method='yake'):
     grouped_documents = group_clustered_documents(cluster_assignments, documents)
-    large_doc_keywords = large_doc_extract(grouped_documents, num_clusters)
+    large_doc_keywords = large_doc_extract(grouped_documents, num_clusters, method=method)
     return large_doc_keywords
 
 
-def do_baseline_approach(documents, method='yake', background_documents=[]):
+def do_baseline_approach(documents, method='yake', background_documents=[], precomputed_embeddings=None, bert_model_name="all-MiniLM-L6-v2"):
     if method == 'yake':
         yake_model = create_yake(max_ngram_size=6)
-        non_stripped_keywords = [get_yake_keywords(yake_model, doc) for doc in docs]
+        non_stripped_keywords = [get_yake_keywords(yake_model, doc) for doc in documents]
         keywords = strip_yake_scores(non_stripped_keywords)
     elif method == 'bert':
-        keywords = do_bert_keyword_extraction(documents)
+        model = create_transformer_model(bert_model_name)
+        keywords = do_bert_keyword_extraction(documents, model, precomputed_embeddings=precomputed_embeddings)
     elif method == 'sfpd':
         keywords = [do_get_expand_sfpd_phrases([doc], background_documents) for doc in documents]
     return keywords
 
 
+def tensor_to_list(tensors):
+    tensor_list = []
+    for tensor in tensors:
+        tensor_list.append(tensor)
+    return tensor_list
+
+# with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
+#     Kravpivin_miniLM = pickle.load(handle)
+#
+#
+# with open('{}.pickle'.format("marujo"), 'rb') as handle:
+#     background_docss = pickle.load(handle)[1]
+#
+# with open('{}.pickle'.format("Kravpivin2009"), 'rb') as handle:
+#     corpus_data = pickle.load(handle)
+# corpus_documents = corpus_data[1]
+# corpus_true_keywords = corpus_data[2]
+#
+# pre_comp_embed = tensor_to_list(Kravpivin_miniLM)
+#
+# all_kws, all_scores, all_approach = [], [], []
+# keyword_extraction_methods = ['bert']
+# for kw_method in keyword_extraction_methods:
+#     temp_kw = do_baseline_approach(corpus_documents, method=kw_method, background_documents=background_docss, precomputed_embeddings=pre_comp_embed)
+#     all_kws.append(temp_kw)
+#     all_scores.append(
+#         calculate_mean_average_precision(temp_kw, corpus_true_keywords)
+#     )
+#     all_approach.append("baseline-{}".format(kw_method))
+#
+# df_baseline = pd.DataFrame(list(zip(all_approach, all_scores, all_kws)), columns=['approach', 'scores', 'keywords'])
+# df_baseline.to_csv("kw_extraction_baseline_test4.csv")
 
 
-df = pd.read_csv("Kravpivin2009_with_keywords.csv")
-docs = df['1'].tolist()
-docs = docs[:50]
 
-df = pd.read_csv("Marujo_with_keywords.csv")
-background_docs = df['1'].tolist()
-background_docs = background_docs[:50]
-
-with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
-    Kravpivin_miniLM = pickle.load(handle)
-Kravpivin_miniLM = Kravpivin_miniLM[:50]
-
-with open('Kravpivin2009.pickle', 'rb') as handle:
-    Krav_data = pickle.load(handle)
-
-# clusters = cluster_doc_representation(Kravpivin_miniLM, method='aglo', num_clusters=15)
-true_kw = Krav_data[2]
-true_kw = true_kw[:50]
-# grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
-# large_kw = do_large_doc_approach(clusters, docs, 15)
-# aggregate_kw = do_aggregate_approach(clusters, docs, Kravpivin_miniLM, 15)
-
-# yakee = create_yake(max_ngram_size=6)
-# yakee_keywords = [get_yake_keywords(yakee, doc) for doc in docs]
-# s_keywords = strip_yake_scores(yakee_keywords)
+# df = pd.read_csv("Kravpivin2009_with_keywords.csv")
+# docs = df['1'].tolist()
+# docs = docs[:50]
+#
+# df = pd.read_csv("Marujo_with_keywords.csv")
+# background_docs = df['1'].tolist()
+# background_docs = background_docs[:50]
+#
+# with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
+#     Kravpivin_miniLM = pickle.load(handle)
+# Kravpivin_miniLM = Kravpivin_miniLM[:50]
+#
+# with open('Kravpivin2009.pickle', 'rb') as handle:
+#     Krav_data = pickle.load(handle)
+#
+# # clusters = cluster_doc_representation(Kravpivin_miniLM, method='aglo', num_clusters=15)
+# true_kw = Krav_data[2]
+# true_kw = true_kw[:50]
+# # grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
+# # large_kw = do_large_doc_approach(clusters, docs, 15)
+# # aggregate_kw = do_aggregate_approach(clusters, docs, Kravpivin_miniLM, 15)
+#
+# # yakee = create_yake(max_ngram_size=6)
+# # yakee_keywords = [get_yake_keywords(yakee, doc) for doc in docs]
+# # s_keywords = strip_yake_scores(yakee_keywords)
+# # print(s_keywords)
+#
+# print("Starting BERT")
+# # s_keywords = do_bert_keyword_extraction(docs)
+# s_keywords = [do_get_expand_sfpd_phrases([doc], background_docs) for doc in docs]
 # print(s_keywords)
-
-print("Starting BERT")
-# s_keywords = do_bert_keyword_extraction(docs)
-s_keywords = [do_get_expand_sfpd_phrases([doc], background_docs) for doc in docs]
-print(s_keywords)
-print('MAP for BASE YAKE: {}'.format(calculate_mean_average_precision(s_keywords, true_kw)))
+# print('MAP for BASE YAKE: {}'.format(calculate_mean_average_precision(s_keywords, true_kw)))
 
 # print("MAP For YAKE Large DOC: {}".format(calculate_mean_average_precision(large_kw, grouped_true_kw)))
 # print("MAP For YAKE aggregate average DOC: {}".format(calculate_mean_average_precision(aggregate_kw, grouped_true_kw)))

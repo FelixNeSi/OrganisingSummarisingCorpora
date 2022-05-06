@@ -9,8 +9,7 @@ import numpy as np
 import pickle
 from sklearn.decomposition import PCA
 
-
-def cluster_doc_representation(doc_representations, method, num_clusters=10, min_community_size=5, threshold=0.75,
+def cluster_doc_representation(doc_representations, method, num_clusters=10, min_community_size=1, threshold=0.5,
                                dist_threshold=1.5):
     if method == 'kmeans':
         clusters = kmeans_cluster(doc_representations, num_clusters)
@@ -20,6 +19,7 @@ def cluster_doc_representation(doc_representations, method, num_clusters=10, min
         clusters = aglo_cluster(doc_representations, num_clusters)
     return clusters
 
+
 def group_clustered_documents(cluster_labels, data):
     clustered_docs = {}
     for i, label in enumerate(cluster_labels):
@@ -27,3 +27,4 @@ def group_clustered_documents(cluster_labels, data):
         docs_in_cluster.append(data[i])
         clustered_docs[label] = docs_in_cluster
     return clustered_docs
+

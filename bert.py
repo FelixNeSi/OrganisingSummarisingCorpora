@@ -32,7 +32,7 @@ def aglo_cluster(corpus_embeddings, n_clusters=5, distance_threshold=None):
     return cluster_assignment
 
 
-def fast_cluster(corpus_embeddings, min_community_size=25, threshold=0.75):
+def fast_cluster(corpus_embeddings, min_community_size=5, threshold=0.25):
     clusters = util.community_detection(corpus_embeddings, min_community_size=min_community_size, threshold=threshold,
                                         init_max_size=len(corpus_embeddings))
     assignments = [None for x in range(len(corpus_embeddings))]
@@ -130,17 +130,24 @@ def mmr(doc_embedding, word_embeddings, candidates, top_n, diversity):
     return [candidates[idx] for idx in keywords_idx]
 
 
-def do_bert_keyword_extraction(data, sim_method="cosine", top_n=25, nr_candidates=100, diversity=0.2):
+def do_bert_keyword_extraction(data, model, sim_method="cosine", top_n=25, nr_candidates=100, diversity=0.2, model_name='all-MiniLM-L6-v2', precomputed_embeddings=None):
     candidates = [generate_candidate_keywords([doc]) for doc in data]
-    model = create_transformer_model()
-    doc_embeddings = [model.encode([doc]) for doc in data]
+    # model = create_transformer_model(model_name)
+    if precomputed_embeddings is None:
+        doc_embeddings = [model.encode([doc]) for doc in data]
+        print(type(doc_embeddings))
+        print(doc_embeddings)
+    else:
+        print("precomputed! {}".format(type(precomputed_embeddings)))
+        doc_embeddings = precomputed_embeddings
+        print(doc_embeddings)
     candidate_embeddings = [model.encode(cand) for cand in candidates]
     keywords = []
     for i in range(len(data)):
         print("ON DOCUMENT: {} OUT OF: {}".format(i, len(data)))
         if sim_method == "cosine":
             keywords.append(
-                get_most_cosine_similar(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n=top_n))
+                get_most_cosine_similar(doc_embeddings[i].reshape(1, -1), candidate_embeddings[i], candidates[i], top_n=top_n))
         elif sim_method == "max_sum":
             keywords.append(
                 max_sum_sim(doc_embeddings[i], candidate_embeddings[i], candidates[i], top_n, nr_candidates))
