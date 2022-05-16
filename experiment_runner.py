@@ -9,14 +9,13 @@ from topic_modelling import do_get_topic_model
 from utils import calculate_mean_average_precision
 from preprocessing import clean_corpus
 
+
 def get_doc_representation(data, method, model_name='distilbert-base-nli-mean-tokens'):
     if method == 'bert':
         model = create_transformer_model(model_name)
-        # doc_representations = [encode_corpus_with_model(d, model) for d in data]
         doc_representations = encode_corpus_with_model(data, model)
     elif method == 'topic':
         doc_representations = do_get_topic_model(data)
-        # doc_representations = [do_get_topic_model(d) for d in data]
     return doc_representations
 
 
@@ -26,7 +25,6 @@ def get_save_doc_representation(file_name, representation_method, model_name="di
         m_data = pickle.load(handle)
 
     m_text = m_data[1]
-    # print(m_text)
 
     if representation_method == 'bert':
         pickle_name = model_name.replace('/', '-')
@@ -51,19 +49,9 @@ def get_save_doc_representation(file_name, representation_method, model_name="di
 def cluster_experiment(docs, save_name, cluster_method, cluster_nums=None, **kwargs):
     if cluster_nums is None:
         cluster_nums = [2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 250, 300, 350, 400]
-    # , 450]
-    # , 500, 550, 600, 650, 700, 750,
-    #             800, 850, 900, 950, 1000, 1100, 1200]
-    # , 500, 550, 600, 650, 700]
     all_silhouette, all_davies_bouldin, all_calinksi = [], [], []
     for cl in cluster_nums:
         clusters = cluster_doc_representation(docs, method=cluster_method, num_clusters=cl)
-        # for x in clusters:
-        #     print(x)
-        # print(clusters)
-        # silhouette = metrics.silhouette_score(docs, clusters, metric='euclidean')
-        # davies = metrics.davies_bouldin_score(docs, clusters)
-        # calinksi = metrics.calinski_harabasz_score(docs, clusters)
         try:
             silhouette = metrics.silhouette_score(docs, clusters, metric='euclidean')
             davies = metrics.davies_bouldin_score(docs, clusters)
@@ -77,8 +65,6 @@ def cluster_experiment(docs, save_name, cluster_method, cluster_nums=None, **kwa
         all_silhouette.append(silhouette)
         all_davies_bouldin.append(davies)
         all_calinksi.append(calinksi)
-        # print(metrics.silhouette_score(docs, clusters, metric='euclidean'))
-    # organsise_summarise_corpus(dat)
     df = pd.DataFrame(list(zip(cluster_nums, all_silhouette, all_davies_bouldin, all_calinksi)),
                       columns=['n_cluster', 'silhouette score', 'Davies-Bouldin', 'Calinski-Harabasz'])
     df.to_csv('{}.csv'.format(save_name))
@@ -113,8 +99,10 @@ def full_clustering_experiment(corpus_data_file_name, preprocessing='no-pre'):
             cluster_experiment(topic_doc_representation, save_name, clustering_method)
 
 
-def keyword_extraction_experiment(corpus_data_file_name, corpus_embeddings, cluster_labels):
-    keyword_extraction_methods = ['yake', 'bert', 'sfpd']
+def keyword_extraction_experiment(corpus_data_file_name, corpus_embeddings, cluster_labels, agg_large_num_keywords=450, base_num_keywords=10, background_docs=[]):
+    # keyword_extraction_methods = ['sfpd', 'bert']
+    # , 'yake']
+    keyword_extraction_methods = ['yake', 'sfpd', 'bert']
     with open('{}.pickle'.format(corpus_data_file_name), 'rb') as handle:
         corpus_data = pickle.load(handle)
     corpus_documents = corpus_data[1]
@@ -125,11 +113,17 @@ def keyword_extraction_experiment(corpus_data_file_name, corpus_embeddings, clus
     large_doc_keywords, aggregate_keywords, baseline_keywords, large_approach, aggregate_approach, baseline_approach, large_doc_scores, aggregate_scores, baseline_scores = [], [], [], [], [], [], [], [], []
     all_keywords, all_approach, all_scores = [], [], []
     for keyword_extraction_method in keyword_extraction_methods:
-        temp_keywords_large_doc_approach = do_large_doc_approach(cluster_labels, corpus_documents, num_clusters,
-                                                                 method=keyword_extraction_method)
+        temp_keywords_baseline = do_baseline_approach(corpus_documents, method=keyword_extraction_method,
+                                                      precomputed_embeddings=None, num_keywords=base_num_keywords,
+                                                      background_documents=background_docs,
+                                                      bert_model_name='allenai/scibert_scivocab_uncased')
+
         temp_keywords_aggregate_approach = do_aggregate_approach(cluster_labels, corpus_documents, corpus_embeddings,
-                                                                 num_clusters, method=keyword_extraction_method)
-        temp_keywords_baseline = do_baseline_approach(corpus_documents, method=keyword_extraction_method, precomputed_embeddings=corpus_embeddings)
+                                                                 num_clusters, method=keyword_extraction_method,
+                                                                 num_keywords=agg_large_num_keywords)
+        temp_keywords_large_doc_approach = do_large_doc_approach(cluster_labels, corpus_documents, num_clusters,
+                                                                 method=keyword_extraction_method, num_keywords=agg_large_num_keywords)
+
 
         large_doc_keywords.append(temp_keywords_large_doc_approach)
         aggregate_keywords.append(temp_keywords_aggregate_approach)
@@ -166,34 +160,49 @@ def keyword_extraction_experiment(corpus_data_file_name, corpus_embeddings, clus
     # TODO SAVE THE DATA INTO PICKLE AND CSV, FIGURE OUT THE BETTER DATA FORMAT
 
     df_large = pd.DataFrame(list(zip(large_approach, large_doc_scores, large_doc_keywords)), columns=['approach', 'scores', 'keywords'])
-    df_large.to_csv("kw_extraction_large.csv")
+    df_large.to_csv("{}__kw__extraction_large.csv".format(corpus_data_file_name))
     df_aggregate = pd.DataFrame(list(zip(aggregate_approach, aggregate_scores, aggregate_keywords)), columns=['approach', 'scores', 'keywords'])
-    df_aggregate.to_csv("kw_extraction_aggregate.csv")
+    df_aggregate.to_csv("{}__kw__extraction_aggregate.csv".format(corpus_data_file_name))
     df_baseline = pd.DataFrame(list(zip(baseline_approach, baseline_scores, baseline_keywords)),
                                 columns=['approach', 'scores', 'keywords'])
-    df_baseline.to_csv("kw_extraction_baseline.csv")
+    df_baseline.to_csv("{}__kw__extraction_baseline.csv".format(corpus_data_file_name))
     df_all = pd.DataFrame(list(zip(all_approach, all_scores, all_keywords)) , columns=['approach', 'scores', 'keywords'])
-    df_all.to_csv("kw_extraction_all.csv")
+    df_all.to_csv("{}__kw__extraction_all.csv".format(corpus_data_file_name))
+
+    all_info = (all_approach, all_scores, all_keywords)
+    with open('{}___kw_testing_data.pickle'.format(corpus_data_file_name), 'wb') as handle:
+        pickle.dump(all_info, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # grouped_true_kw = group_keywords_from_file(clusters, true_kw, 15)
     # large_kw = do_large_doc_approach(clusters, docs, 15)
     # aggregate_kw = do_aggregate_approach(clusters, docs, Kravpivin_miniLM, 15)
 
-corpora = ['marujo', 'Kravpivin2009', '500n-KPCrowd',  'kdd-science']
-# corpora = ['Kravpivin2009', 'kdd-science']
-for corpus in corpora:
-    full_clustering_experiment(corpus, preprocessing='clean-no-lemma')
+# corpora = ['marujo', 'Kravpivin2009', '500n-KPCrowd',  'kdd-science']
+# # corpora = ['Kravpivin2009', 'kdd-science']
+# for corpus in corpora:
+#     full_clustering_experiment(corpus, preprocessing='clean-no-lemma')
+with open('marujo.pickle', 'rb') as handle:
+    background_data = pickle.load(handle)[1]
 
+with open("kdd-science_allenai-scibert_scivocab_uncased.pickle", 'rb') as handle:
+    corpus_representation_bert = pickle.load(handle)
 
-# with open("Kravpivin2009_all-MiniLM-L6-v2.pickle", 'rb') as handle:
-#     Kravpivin_miniLM = pickle.load(handle)
-# # TODO FIGURE OUT HOW TO REUSE THE PREGENERATED EMBEDDINGS
-# with open('{}.pickle'.format('Kravpivin2009'), 'rb') as handle:
+# with open('{}.pickle'.format('kdd-science'), 'rb') as handle:
+#     corpus_data = pickle.load(handle)
+# corpus_documents = corpus_data[1]
+
+# print(len(corpus_documents))
+#
+# with open("kdd-science_lda_10_clean-no-lemma.pickle", 'rb') as handle:
+#     corpus_representation_tm = pickle.load(handle)
+
+# TODO FIGURE OUT HOW TO REUSE THE PREGENERATED EMBEDDINGS
+# with open('{}.pickle'.format('kdd-science'), 'rb') as handle:
 #     ccorpus_data = pickle.load(handle)
 # ccorpus_documents = ccorpus_data[1]
-#
-# clusterss = cluster_doc_representation(Kravpivin_miniLM, method='aglo', num_clusters=20)
-# keyword_extraction_experiment('Kravpivin2009', Kravpivin_miniLM, clusterss)
+
+clusterss = cluster_doc_representation(corpus_representation_bert, method='aglo', num_clusters=35)
+keyword_extraction_experiment('kdd-science', corpus_representation_bert, clusterss, base_num_keywords=10, agg_large_num_keywords=201, background_docs=background_data)
 
 # /Users/felixnesi/PycharmProjects/OrganisingSummarisingCorpus/scibert_scivocab_uncased
 # /Users/felixnesi/PycharmProjects/OrganisingSummarisingCorpus/distilbert-base-nli-mean-tokens

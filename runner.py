@@ -1,7 +1,7 @@
 import pandas as pd
 
-from bert import create_transformer_model, encode_corpus_with_model, kmeans_cluster, fast_cluster, aglo_cluster, \
-    do_bert_keyword_extraction
+from bert import create_transformer_model, encode_corpus_with_model, do_bert_keyword_extraction
+from clustering_runner import kmeans_cluster, aglo_cluster, fast_cluster
 from topic_modelling import do_get_topic_model
 from keyword_extraction_yake import create_yake, get_yake_keywords, do_get_expand_sfpd_phrases
 from sklearn import metrics

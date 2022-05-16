@@ -27,6 +27,13 @@ def calculate_mean_average_precision(predicted_keywords, true_keywords):
     return mean_average_precision
 
 
+def tensor_to_list(tensors):
+    tensor_list = []
+    for tensor in tensors:
+        tensor_list.append(tensor)
+    return tensor_list
+
+
 def print_kwargs(**kwargs):
     print(kwargs['printt'])
     for x in kwargs['list']:

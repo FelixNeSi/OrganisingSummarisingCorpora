@@ -244,14 +244,14 @@ def strip_scores_from_keywords(grouped_keywords):
 #     group_kw = pickle.load(handle)
 #
 
-# with open('Kravpivin2009.pickle', 'rb') as handle:
-#     Krav_data = pickle.load(handle)
-#
-# true_kw = Krav_data[2]
-# for tr_kw in true_kw:
-#     temp_kws = [len(kw.split()) for kw in tr_kw]
-#     print(tr_kw[temp_kws.index(max(temp_kws))])
-#     print(max(temp_kws))
+with open('kdd-science.pickle', 'rb') as handle:
+    Krav_data = pickle.load(handle)
+
+true_kw = Krav_data[2]
+for tr_kw in true_kw:
+    temp_kws = [len(kw.split()) for kw in tr_kw]
+    print(tr_kw[temp_kws.index(max(temp_kws))])
+    print(max(temp_kws))
 
 
 # print(true_kw)

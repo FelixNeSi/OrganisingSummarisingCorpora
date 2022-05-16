@@ -39,12 +39,20 @@ def prep_and_pickle(file_path, save_name):
 
 #prep_and_pickle("data/Marujo/", "Marujo")
 # prep_and_pickle("data/Krapivin2009/", "Kravpivin2009")
-prep_and_pickle("data/kdd/", "kdd-science")
+# prep_and_pickle("data/kdd/", "kdd-science")
 
+# x = pd.DataFrame([1,2,3,4,5,55325235,76575,575,23])
+# print(x)
+# with open('pd_test.pickle', 'wb') as handle:
+#     pickle.dump(x, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-
-
-
+# with open('pd_test.pickle', 'rb') as handle:
+#     y = pickle.load(handle)
+# print(y)
+with open('marujo.pickle', 'rb') as handle:
+    corpus_data = pickle.load(handle)
+dox = corpus_data[1]
+print(len(dox))
 #
 # y = []
 # with open("2.key", "r") as file:

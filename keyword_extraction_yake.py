@@ -3,7 +3,7 @@ from sfpd.words import top_words_llr, top_words_sfpd, top_words_chi2, count_word
 from sfpd.phrases import get_top_phrases
 
 
-def create_yake(language="en", max_ngram_size=1, deduplication_thresold=0.9, deduplication_algo='jaro',
+def create_yake(language="en", max_ngram_size=6, deduplication_thresold=0.9, deduplication_algo='jaro',
                 window_size=3, num_of_keywords=20):
     custom_kw_extractor = yake.KeywordExtractor(lan=language,
                                                 n=max_ngram_size,
@@ -27,9 +27,9 @@ def get_sfpd_target_background_counts(target_docs, background_docs, min_count=4)
     return target_counts, background_counts
 
 
-def get_sfpd_root_words(target_counts, background_counts, method="sfpd"):
+def get_sfpd_root_words(target_counts, background_counts, method="sfpd", num_keywords=450):
     if method == "sfpd":
-        words = top_words_sfpd(target_counts, background_counts)
+        words = top_words_sfpd(target_counts, background_counts, num_keywords)
     elif method == "loglikeli":
         words = top_words_llr(target_counts, background_counts)
     elif method == "chisquare":
@@ -45,9 +45,9 @@ def expand_sfpd_phrases(words, data):
     return top_phrases
 
 
-def do_get_expand_sfpd_phrases(data, background, min_count=4, root_word_method="sfpd"):
+def do_get_expand_sfpd_phrases(data, background, min_count=4, root_word_method="sfpd", num_keywords=450):
     t, b = get_sfpd_target_background_counts(data, background, 2)
-    word = get_sfpd_root_words(t, b)
+    word = get_sfpd_root_words(t, b, num_keywords=num_keywords)
     phrases = expand_sfpd_phrases(word, data).raw_phrases()
     print(phrases)
     return phrases
